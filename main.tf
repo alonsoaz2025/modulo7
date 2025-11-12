@@ -14,7 +14,7 @@ resource "google_bigquery_dataset" "demo_dataset" {
   friendly_name              = "Demo Dataset Terraformizado"
   description                = "Dataset para el caso integral de pipeline de datos"
   location                   = "US"
-  delete_contents_on_destroy = true
+  skip_delete = true  # ✅ evita que Terraform intente borrarlo o recrearlo
 }
 
 # ==========================================================
