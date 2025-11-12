@@ -23,7 +23,6 @@ resource "google_billing_project_info" "project_billing" {
 }
 
 
-
 # ==========================================================
 # 2️⃣ PROCESAMIENTO: TABLA ANALÍTICA DERIVADA DE DATASET PÚBLICO
 # ==========================================================
