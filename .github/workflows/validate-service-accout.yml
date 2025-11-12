@@ -1,0 +1,80 @@
+name: 🔐 Validate GCP Service Account Link
+
+on:
+  workflow_dispatch:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+
+    steps:
+      # ================================================
+      # 🧱 0. Clonar repositorio
+      # ================================================
+      - name: 🧩 Checkout
+        uses: actions/checkout@v4
+
+      # ================================================
+      # 🔐 1. Crear archivo temporal con credenciales
+      # ================================================
+      - name: 🔑 Generar archivo de credenciales temporal
+        run: |
+          echo "$GOOGLE_CREDENTIALS" > sa.json
+          echo -e "\033[1;32m✅ Archivo sa.json generado correctamente.\033[0m"
+
+      # ================================================
+      # 🧠 2. Activar cuenta de servicio y extraer project_id
+      # ================================================
+      - name: 🧭 Activar cuenta de servicio
+        run: |
+          echo -e "\033[1;34m🔍 Activando cuenta de servicio...\033[0m"
+          gcloud auth activate-service-account --key-file=sa.json
+          PROJECT_ID=$(jq -r '.project_id' sa.json)
+          echo "PROJECT_ID=$PROJECT_ID" >> $GITHUB_ENV
+          echo -e "\033[1;32m✅ Autenticación exitosa para el proyecto: $PROJECT_ID\033[0m"
+
+      # ================================================
+      # 💳 3. Validar facturación activa
+      # ================================================
+      - name: 💰 Validar billing asociado al proyecto
+        run: |
+          echo -e "\033[1;33m💳 Validando cuenta de billing...\033[0m"
+          BILLING=$(gcloud beta billing projects describe "$PROJECT_ID" --format="value(billingEnabled)")
+          if [ "$BILLING" = "True" ] || [ "$BILLING" = "true" ]; then
+            echo -e "\033[1;32m✅ Billing activo en el proyecto $PROJECT_ID\033[0m"
+          else
+            echo -e "\033[1;31m❌ Billing no activo. Asocia la cuenta de facturación antes de continuar.\033[0m"
+            exit 1
+          fi
+
+      # ================================================
+      # 🌐 4. Validar acceso a APIs requeridas
+      # ================================================
+      - name: 🌍 Validar APIs activas
+        run: |
+          echo -e "\033[1;33m🌐 Verificando APIs necesarias...\033[0m"
+          gcloud services list --enabled --project="$PROJECT_ID" | grep -E 'bigquery|storage' || echo "⚠️ Algunas APIs podrían no estar habilitadas."
+          echo -e "\033[1;32m✅ Validación de APIs completada.\033[0m"
+
+      # ================================================
+      # 📦 5. Validar acceso a BigQuery y Cloud Storage
+      # ================================================
+      - name: 📊 Validar acceso a BigQuery y Storage
+        run: |
+          echo -e "\033[1;33m📦 Validando permisos operativos...\033[0m"
+          echo -e "\033[1;34m🔎 Listando buckets...\033[0m"
+          gcloud storage buckets list --project="$PROJECT_ID" --limit=3 || echo "⚠️ Sin acceso a buckets o no existen."
+          echo -e "\033[1;34m🔎 Listando datasets de BigQuery...\033[0m"
+          bq ls --project_id="$PROJECT_ID" --max_results=3 || echo "⚠️ Sin acceso a datasets o no existen."
+          echo -e "\033[1;32m✅ Validación de acceso completada.\033[0m"
+
+      # ================================================
+      # 🧹 6. Limpieza segura
+      # ================================================
+      - name: 🧹 Eliminar credenciales temporales
+        if: always()
+        run: |
+          rm -f sa.json
+          echo -e "\033[1;34m🧹 Credenciales temporales eliminadas.\033[0m"

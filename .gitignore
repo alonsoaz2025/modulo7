@@ -1,0 +1,18 @@
+# Terraform
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.tfstate.lock.info
+crash.log
+
+# Credenciales
+*.json
+*.key
+*.pem
+
+# Logs
+terraform-debug.log
+
+# IDE y SO
+.vscode/
+.DS_Store

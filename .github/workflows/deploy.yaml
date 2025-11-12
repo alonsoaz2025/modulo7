@@ -1,0 +1,118 @@
+name: 🚀 Terraform Deploy – GCP BigQuery Pipeline
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      destroy:
+        description: "🧨 Ejecutar terraform destroy"
+        required: false
+        default: "false"
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
+      TF_LOG: TRACE
+      TF_LOG_PATH: terraform-debug.log
+
+    steps:
+      # ================================================
+      # 🧱 0. Inicio y diagnóstico del entorno
+      # ================================================
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🧰 Configuración del entorno
+        run: |
+          echo -e "\033[1;34m🔍 Verificando entorno...\033[0m"
+          terraform -version
+          echo -e "\033[1;34m✅ Entorno validado correctamente.\033[0m"
+
+      # ================================================
+      # ⚙️ 1. Instalación de Terraform
+      # ================================================
+      - name: 🧠 Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.5
+
+      # ================================================
+      # 🔐 2. Inicialización
+      # ================================================
+      - name: 🚀 Terraform Init
+        working-directory: terraform
+        run: |
+          echo -e "\033[1;33m📦 Iniciando Terraform...\033[0m"
+          terraform init -input=false -no-color
+          echo -e "\033[1;32m✅ Inicialización completada.\033[0m"
+
+      # ================================================
+      # 🧪 3. Validación de sintaxis y dependencias
+      # ================================================
+      - name: 🧩 Terraform Validate
+        working-directory: terraform
+        run: |
+          echo -e "\033[1;33m🔎 Validando configuración...\033[0m"
+          terraform validate -no-color
+          echo -e "\033[1;32m✅ Validación completada.\033[0m"
+
+      # ================================================
+      # 📊 4. Plan de ejecución (preview)
+      # ================================================
+      - name: 📋 Terraform Plan
+        env:
+          TF_LOG: TRACE
+        working-directory: terraform
+        run: |
+          echo -e "\033[1;33m🧮 Generando plan de ejecución...\033[0m"
+          terraform plan -no-color \
+            -var="google_credentials=$GOOGLE_CREDENTIALS"
+          echo -e "\033[1;32m✅ Plan generado correctamente.\033[0m"
+
+      # ================================================
+      # 🚢 5. Aplicación (Despliegue o Destrucción)
+      # ================================================
+      - name: 🚢 Terraform Apply / Destroy
+        env:
+         TF_LOG: TRACE
+        if: github.event.inputs.destroy != 'true'
+        working-directory: terraform
+        run: |
+          echo -e "\033[1;36m🚀 Ejecutando Terraform Apply...\033[0m"
+          terraform apply -auto-approve -no-color \
+            -var="google_credentials=$GOOGLE_CREDENTIALS"
+          echo -e "\033[1;32m✅ Despliegue completado exitosamente.\033[0m"
+
+      - name: 🧨 Terraform Destroy
+        if: github.event.inputs.destroy == 'true'
+        working-directory: terraform
+        run: |
+          echo -e "\033[1;31m🧨 Ejecutando Terraform Destroy...\033[0m"
+          terraform destroy -auto-approve -no-color \
+            -var="google_credentials=$GOOGLE_CREDENTIALS"
+          echo -e "\033[1;32m🧹 Entorno limpiado correctamente.\033[0m"
+
+      # ================================================
+      # 🧾 6. Logging y diagnóstico post-ejecución
+      # ================================================
+      - name: 🪵 Publicar Logs
+        if: always()
+        working-directory: terraform
+        run: |
+          echo -e "\033[1;35m📜 Últimos 20 registros de Terraform:\033[0m"
+          tail -n 20 terraform-debug.log || echo "No hay archivo de log"
+          echo -e "\033[1;35m🔗 Guardando logs como artefacto...\033[0m"
+        continue-on-error: true
+
+      - name: 💾 Subir logs como artefacto
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terraform-logs
+          path: terraform/terraform-debug.log
