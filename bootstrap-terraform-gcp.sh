@@ -7,7 +7,7 @@ set -u
 # 1️⃣ VARIABLES CONFIGURABLES
 # -----------------------------
 export BILLING_ACCOUNT="016D51-A387E0-FACB76"
-export PROJECT_ID="project-bigdata-nh-final"
+export PROJECT_ID="project-bigdata-final"
 export PROJECT_NAME="Project-BigData-Try-2"
 export REGION="us-east1"
 export ZONE="us-east1-b"
@@ -24,16 +24,17 @@ gcloud config unset project || true
 # 3️⃣ CREAR PROYECTO Y CUENTA DE SERVICIO
 # ----------------------------------------------------
 echo "🏗️ Creando proyecto $PROJECT_ID ..."
-gcloud projects create $PROJECT_ID --name="$PROJECT_NAME" --set-as-default
+gcloud projects create $PROJECT_ID --name="$PROJECT_NAME" --set-as-default --quiet
 echo -e "\033[1;33m🔐 Creando cuenta de servicio: $SA_NAME...\033[0m"
 gcloud iam service-accounts create $SA_NAME \
   --display-name="$SA_DISPLAY_NAME" \
-  --project=$PROJECT_ID
+  --project=$PROJECT_ID \
+  --quiet || echo "ℹ️ La cuenta ya existe, continuando..."
 # -----------------------------
 # 4️⃣ VINCULAR BILLING
 # ------------------------------------------
 echo "💳 Vinculando cuenta de facturación..."
-gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT
+gcloud beta billing projects link $PROJECT_ID --billing-account=$BILLING_ACCOUNT --quiet
 # -----------------------------
 # 5️⃣ CONFIGURAR REGIÓN Y ZONA
 # -----------------------------
@@ -73,7 +74,7 @@ APIS=(
 )
 for api in "${APIS[@]}"; do
   echo "🔧 Habilitando $api ..."
-  gcloud services enable $api --project=$PROJECT_ID
+  gcloud services enable $api --project=$PROJECT_ID --quiet || echo "⚠️ API $API ya habilitada."
   echo "⏳ Esperando 60 segundos para propagación de $api ..."
   sleep 60
 done
@@ -88,7 +89,7 @@ do
   gcloud projects add-iam-policy-binding $PROJECT_ID \
     --member="serviceAccount:${SA_NAME}@${PROJECT_ID}.iam.gserviceaccount.com" \
     --role="$ROLE" \
-    --quiet
+    --quiet || echo "⚠️ Rol $ROLE ya asignado o sin cambios."
 done
 # -----------------------------
 # 9️⃣ VALIDAR CONFIGURACIÓN FINAL
