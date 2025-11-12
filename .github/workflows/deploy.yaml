@@ -19,21 +19,19 @@ jobs:
     env:
       GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
       TF_LOG: TRACE
+      TF_LOG_PATH: terraform/terraform-debug.log
 
     steps:
       # ================================================
-      # ⚙️ 1. Instalación de Terraform
+      # 🧩 0. Preparación del entorno
       # ================================================
+      - name: 🧩 Checkout repository
+        uses: actions/checkout@v4
+
       - name: 🧠 Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.6.6
-
-      # ================================================
-      # 🧱 0. Inicio y diagnóstico del entorno
-      # ================================================
-      - name: 🧩 Checkout repository
-        uses: actions/checkout@v4
 
       - name: 🧰 Configuración del entorno
         run: |
@@ -41,35 +39,38 @@ jobs:
           terraform -version
           echo -e "\033[1;34m✅ Entorno validado correctamente.\033[0m"
 
-
+      - name: 🗂 Crear carpeta y archivo de logs
+        run: |
+          echo -e "\033[1;34m📁 Creando estructura de trabajo...\033[0m"
+          mkdir -p terraform
+          touch terraform/terraform-debug.log
+          echo -e "\033[1;32m✅ Carpeta 'terraform/' y archivo de log creados correctamente.\033[0m"
 
       # ================================================
-      # 🔐 2. Inicialización
+      # 🔐 1. Inicialización
       # ================================================
       - name: 🚀 Terraform Init
-        working-directory:
+        working-directory: terraform
         run: |
           echo -e "\033[1;33m📦 Iniciando Terraform...\033[0m"
           terraform init -input=false -no-color
           echo -e "\033[1;32m✅ Inicialización completada.\033[0m"
 
       # ================================================
-      # 🧪 3. Validación de sintaxis y dependencias
+      # 🧪 2. Validación de sintaxis
       # ================================================
       - name: 🧩 Terraform Validate
-        working-directory:
+        working-directory: terraform
         run: |
           echo -e "\033[1;33m🔎 Validando configuración...\033[0m"
           terraform validate -no-color
           echo -e "\033[1;32m✅ Validación completada.\033[0m"
 
       # ================================================
-      # 📊 4. Plan de ejecución (preview)
+      # 📊 3. Plan de ejecución
       # ================================================
       - name: 📋 Terraform Plan
-        env:
-          TF_LOG: TRACE
-        working-directory:
+        working-directory: terraform
         run: |
           echo -e "\033[1;33m🧮 Generando plan de ejecución...\033[0m"
           terraform plan -no-color \
@@ -77,13 +78,11 @@ jobs:
           echo -e "\033[1;32m✅ Plan generado correctamente.\033[0m"
 
       # ================================================
-      # 🚢 5. Aplicación (Despliegue o Destrucción)
+      # 🚢 4. Aplicación o destrucción
       # ================================================
       - name: 🚢 Terraform Apply / Destroy
-        env:
-         TF_LOG: TRACE
         if: github.event.inputs.destroy != 'true'
-        working-directory: 
+        working-directory: terraform
         run: |
           echo -e "\033[1;36m🚀 Ejecutando Terraform Apply...\033[0m"
           terraform apply -auto-approve -no-color \
@@ -92,7 +91,7 @@ jobs:
 
       - name: 🧨 Terraform Destroy
         if: github.event.inputs.destroy == 'true'
-        working-directory: 
+        working-directory: terraform
         run: |
           echo -e "\033[1;31m🧨 Ejecutando Terraform Destroy...\033[0m"
           terraform destroy -auto-approve -no-color \
@@ -100,11 +99,11 @@ jobs:
           echo -e "\033[1;32m🧹 Entorno limpiado correctamente.\033[0m"
 
       # ================================================
-      # 🧾 6. Logging y diagnóstico post-ejecución
+      # 🧾 5. Logging y diagnóstico post-ejecución
       # ================================================
       - name: 🪵 Publicar Logs
         if: always()
-        working-directory: 
+        working-directory: terraform
         run: |
           echo -e "\033[1;35m📜 Últimos 20 registros de Terraform:\033[0m"
           tail -n 20 terraform-debug.log || echo "No hay archivo de log"
@@ -114,3 +113,7 @@ jobs:
       - name: 💾 Subir logs como artefacto
         if: always()
         uses: actions/upload-artifact@v4
+        with:
+          name: terraform-logs
+          path: terraform/terraform-debug.log
+          if-no-files-found: ignore
