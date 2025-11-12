@@ -1,5 +1,5 @@
 project_id         = "project-bigdata-nh-try-2"
-region             = "us-central1"
+region             = "us-central2"
 billing_account_id = "016D51-A387E0-FACB76"
 dataset_id         = "demo_dataset"
 bucket_name        = "demo-data-bucket"
