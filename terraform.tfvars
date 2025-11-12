@@ -1,4 +1,4 @@
-project_id         = "project-bigdata-nh-try-2"
+project_id         = "project-bigdata-final"
 region             = "us-central1"
 billing_account_id = "016D51-A387E0-FACB76"
 dataset_id         = "demo_dataset"
