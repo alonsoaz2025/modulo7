@@ -19,7 +19,6 @@ jobs:
     env:
       GOOGLE_CREDENTIALS: ${{ secrets.GOOGLE_CREDENTIALS }}
       TF_LOG: TRACE
-      TF_LOG_PATH: terraform-debug.log
 
     steps:
       # ================================================
@@ -38,7 +37,7 @@ jobs:
       # 🔐 2. Inicialización
       # ================================================
       - name: 🚀 Terraform Init
-        working-directory: terraform
+        working-directory:
         run: |
           echo -e "\033[1;33m📦 Iniciando Terraform...\033[0m"
           terraform init -input=false -no-color
@@ -48,7 +47,7 @@ jobs:
       # 🧪 3. Validación de sintaxis y dependencias
       # ================================================
       - name: 🧩 Terraform Validate
-        working-directory: terraform
+        working-directory:
         run: |
           echo -e "\033[1;33m🔎 Validando configuración...\033[0m"
           terraform validate -no-color
@@ -60,7 +59,7 @@ jobs:
       - name: 📋 Terraform Plan
         env:
           TF_LOG: TRACE
-        working-directory: terraform
+        working-directory:
         run: |
           echo -e "\033[1;33m🧮 Generando plan de ejecución...\033[0m"
           terraform plan -no-color \
@@ -74,7 +73,7 @@ jobs:
         env:
          TF_LOG: TRACE
         if: github.event.inputs.destroy != 'true'
-        working-directory: terraform
+        working-directory: 
         run: |
           echo -e "\033[1;36m🚀 Ejecutando Terraform Apply...\033[0m"
           terraform apply -auto-approve -no-color \
@@ -83,7 +82,7 @@ jobs:
 
       - name: 🧨 Terraform Destroy
         if: github.event.inputs.destroy == 'true'
-        working-directory: terraform
+        working-directory: 
         run: |
           echo -e "\033[1;31m🧨 Ejecutando Terraform Destroy...\033[0m"
           terraform destroy -auto-approve -no-color \
@@ -95,7 +94,7 @@ jobs:
       # ================================================
       - name: 🪵 Publicar Logs
         if: always()
-        working-directory: terraform
+        working-directory: 
         run: |
           echo -e "\033[1;35m📜 Últimos 20 registros de Terraform:\033[0m"
           tail -n 20 terraform-debug.log || echo "No hay archivo de log"
@@ -105,6 +104,3 @@ jobs:
       - name: 💾 Subir logs como artefacto
         if: always()
         uses: actions/upload-artifact@v4
-        with:
-          name: terraform-logs
-          path: terraform/terraform-debug.log
