@@ -22,6 +22,14 @@ jobs:
 
     steps:
       # ================================================
+      # ⚙️ 1. Instalación de Terraform
+      # ================================================
+      - name: 🧠 Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.6.6
+
+      # ================================================
       # 🧱 0. Inicio y diagnóstico del entorno
       # ================================================
       - name: 🧩 Checkout repository
@@ -32,6 +40,8 @@ jobs:
           echo -e "\033[1;34m🔍 Verificando entorno...\033[0m"
           terraform -version
           echo -e "\033[1;34m✅ Entorno validado correctamente.\033[0m"
+
+
 
       # ================================================
       # 🔐 2. Inicialización
