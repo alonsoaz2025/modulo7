@@ -35,14 +35,6 @@ jobs:
           echo -e "\033[1;34m✅ Entorno validado correctamente.\033[0m"
 
       # ================================================
-      # ⚙️ 1. Instalación de Terraform
-      # ================================================
-      - name: 🧠 Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.5
-
-      # ================================================
       # 🔐 2. Inicialización
       # ================================================
       - name: 🚀 Terraform Init
