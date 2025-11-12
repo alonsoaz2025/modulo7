@@ -17,12 +17,6 @@ resource "google_bigquery_dataset" "demo_dataset" {
   delete_contents_on_destroy = true
 }
 
-resource "google_billing_project_info" "project_billing" {
-  project         = var.project_id
-  billing_account = var.billing_account_id
-}
-
-
 # ==========================================================
 # 2️⃣ PROCESAMIENTO: TABLA ANALÍTICA DERIVADA DE DATASET PÚBLICO
 # ==========================================================
